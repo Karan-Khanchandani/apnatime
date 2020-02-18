@@ -3,6 +3,8 @@ package com.apnatime.api;
 import com.apnatime.service.IUserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -28,12 +30,27 @@ public class UsersController {
     }
 
     @PostMapping("/uploadUsersInformation")
-    public void uploadUserInfomation(@RequestPart(value = "file") MultipartFile multiPartFile) throws IOException {
+    public ResponseEntity<?> uploadUserInfomation(@RequestPart(value = "file") MultipartFile multiPartFile) throws IOException {
         try {
-            userService.addUsersData(multiPartFile);
+            long recordsInserted = userService.addUsersData(multiPartFile);
+            return new ResponseEntity<>(recordsInserted, HttpStatus.CREATED);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return new ResponseEntity<>("Failed to perform action", HttpStatus.BAD_GATEWAY);
+    }
+
+    @PostMapping("/uploadConnectionsInformation")
+    public ResponseEntity<?> uploadConnectionsInfomation(@RequestPart(value = "file") MultipartFile multiPartFile) throws IOException {
+        try {
+            long recordsInserted = userService.addConnectionsData(multiPartFile);
+            return new ResponseEntity<>(recordsInserted, HttpStatus.CREATED);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return new ResponseEntity<>("Failed to perform action", HttpStatus.BAD_GATEWAY);
     }
 
 }

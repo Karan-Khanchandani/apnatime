@@ -9,9 +9,9 @@ public interface IUserService {
 
     void generateRandomData(Integer numberOfUsers, Integer maxNumberOfFriendships) throws Exception;
 
-    Integer addUsersData(MultipartFile multiPartFile) throws Exception;
+    long addUsersData(MultipartFile multiPartFile) throws Exception;
 
-    Integer addConnectionsData() throws  Exception;
+    long addConnectionsData(MultipartFile multiPartFile) throws  Exception;
 
     List<SearchResult> findUserConnectionsByLevel(Integer userId, Integer level) throws Exception;
 }
