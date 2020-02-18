@@ -1,4 +1,4 @@
-package entity;
+package com.apnatime.entity;
 
 import java.time.OffsetDateTime;
 
