@@ -2,27 +2,24 @@ package com.apnatime.service;
 
 import com.apnatime.domain.Pair;
 import com.apnatime.domain.SearchResult;
-import org.hibernate.Session;
 import org.postgresql.copy.CopyManager;
 import org.postgresql.ds.PGConnectionPoolDataSource;
 import org.postgresql.jdbc.PgConnection;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.persistence.EntityManager;
-import javax.sql.DataSource;
 import java.io.*;
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 @Service
-public class UserServiceImpl implements IUserService{
+public class UserServiceImpl implements IUserService {
 
     @Value("${databaseServer}")
     private String dataSourceUrl;
@@ -33,34 +30,38 @@ public class UserServiceImpl implements IUserService{
     @Value("${databasePassword}")
     private String dataSourcePassword;
 
+    private final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
     @Override
-    public void generateRandomData(Integer numberOfUsers, Integer maxNumberOfFriendships){
-        try{
-            PgConnection pgConnection = (PgConnection) getDatabaseConnection();
+    public void generateRandomData(Integer numberOfUsers, Integer maxNumberOfFriendships) throws Exception {
+        PgConnection pgConnection = null;
+        try {
+            pgConnection = (PgConnection) getDatabaseConnection();
+            pgConnection.setAutoCommit(false);
 
             //first truncate the user table
             String sql = "truncate table users cascade";
 
-            pgConnection.execSQLUpdate(sql) ;
+            pgConnection.execSQLUpdate(sql);
 
             sql = "insert into users(user_id, name)" +
                     " select g1.x, substr(md5(random()::text), 0, 6)" +
-                    " from generate_series(1, " + numberOfUsers+ ") as g1(x)";
+                    " from generate_series(1, " + numberOfUsers + ") as g1(x)";
 
             pgConnection.execSQLUpdate(sql);
 
+            logger.info("{} number of users inserted successfully", numberOfUsers);
 
             StringBuilder sb = new StringBuilder();
             Set<Pair> friendshipPairs = new HashSet<>();
 
-            for(int i = 1; i <= numberOfUsers; i++){
+            for (int i = 1; i <= numberOfUsers; i++) {
                 //can have zero friends, so floor
                 int firstUser = i;
-                int friendLimitForithUser = (int) Math.floor(Math.random()*maxNumberOfFriendships);
-                for(int j = 0; j < friendLimitForithUser; j++){
-                    int secondUser = (int)Math.floor(Math.random()*numberOfUsers) + 1;
-                    if(firstUser != secondUser){
+                int friendLimitForithUser = (int) Math.floor(Math.random() * maxNumberOfFriendships);
+                for (int j = 0; j < friendLimitForithUser; j++) {
+                    int secondUser = (int) Math.floor(Math.random() * numberOfUsers) + 1;
+                    if (firstUser != secondUser) {
                         //need to add both relations in table, we can discuss on this further
                         friendshipPairs.add(new Pair(firstUser, secondUser));
                         friendshipPairs.add(new Pair(secondUser, firstUser));
@@ -68,7 +69,7 @@ public class UserServiceImpl implements IUserService{
                 }
             }
 
-            for(Pair p : friendshipPairs){
+            for (Pair p : friendshipPairs) {
                 sb.append(p.getFirst() + "," + p.getSecond());
                 sb.append("\n");
             }
@@ -76,46 +77,58 @@ public class UserServiceImpl implements IUserService{
             String csvData = sb.toString();
             BufferedReader bufferedReader = new BufferedReader(new StringReader(csvData));
             CopyManager copyManager = pgConnection.getCopyAPI();
-            long recordsInserted = copyManager.copyIn("COPY user_friends_mapping(user_id, friend_id) FROM STDIN WITH DELIMITER AS ','",bufferedReader);
-            System.out.println(recordsInserted);
 
+            long recordsInserted = copyManager.copyIn("COPY user_friends_mapping(user_id, friend_id) FROM STDIN WITH DELIMITER AS ','", bufferedReader);
+
+            logger.info("{} number of relationships added", recordsInserted);
+
+            pgConnection.commit();
+
+        } catch (Exception e) {
+            logger.error("Exception occurred while generating seed data", e);
+            pgConnection.rollback();
+            throw e;
+        } finally {
             pgConnection.close();
-
-        }catch (Exception e){
-            System.out.println("ss");
-            e.printStackTrace();
         }
     }
 
     @Override
     public long addUsersData(MultipartFile multiPartFile) throws Exception {
-        File file = convertMultiPartToFile(multiPartFile);
-        try{
+        PgConnection pgConnection = null;
+        try {
+            File file = convertMultiPartToFile(multiPartFile);
             Reader reader = new FileReader(file);
-            PgConnection pgConnection = (PgConnection) getDatabaseConnection();
+            pgConnection = (PgConnection) getDatabaseConnection();
             CopyManager copyManager = pgConnection.getCopyAPI();
-            long recordsInserted = copyManager.copyIn("COPY users(user_id, name) FROM STDIN WITH DELIMITER AS ',' CSV HEADER",reader);
+            long recordsInserted = copyManager.copyIn("COPY users(user_id, name) FROM STDIN WITH DELIMITER AS ',' CSV HEADER", reader);
             return recordsInserted;
 
-        }catch (Exception e){
-
+        } catch (Exception e) {
+            logger.error("Exception occurred while generating user data from CSV", e);
+            throw e;
+        } finally {
+            pgConnection.close();
         }
-        return 0;
     }
 
     @Override
     public long addConnectionsData(MultipartFile multiPartFile) throws Exception {
-        File file = convertMultiPartToFile(multiPartFile);
-        try{
+        PgConnection pgConnection = null;
+        try {
+            File file = convertMultiPartToFile(multiPartFile);
             Reader reader = new FileReader(file);
-            PgConnection pgConnection = (PgConnection) getDatabaseConnection();
+            pgConnection = (PgConnection) getDatabaseConnection();
             CopyManager copyManager = pgConnection.getCopyAPI();
-            long recordsInserted = copyManager.copyIn("COPY user_friends_mapping(user_id, friend_id) FROM STDIN WITH DELIMITER AS ',' CSV HEADER",reader);
+            long recordsInserted = copyManager.copyIn("COPY user_friends_mapping(user_id, friend_id) FROM STDIN WITH DELIMITER AS ',' CSV HEADER", reader);
             return recordsInserted;
-        }catch (Exception e){
 
+        } catch (Exception e) {
+            logger.error("Exception occurred while generating relations data from CSV", e);
+            throw e;
+        } finally {
+            pgConnection.close();
         }
-        return 0;
     }
 
     @Override
@@ -131,18 +144,12 @@ public class UserServiceImpl implements IUserService{
         return convFile;
     }
 
-    private Connection getDatabaseConnection(){
+    private Connection getDatabaseConnection() throws SQLException {
         PGConnectionPoolDataSource dataSource = new PGConnectionPoolDataSource();
-        dataSource.setUrl("jdbc:"+dataSourceUrl);
+        dataSource.setUrl("jdbc:" + dataSourceUrl);
         dataSource.setUser(dataSourceUsername);
         dataSource.setPassword(dataSourcePassword);
-
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
+        return dataSource.getConnection();
     }
 
 }

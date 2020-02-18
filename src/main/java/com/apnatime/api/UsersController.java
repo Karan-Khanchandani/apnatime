@@ -34,9 +34,8 @@ public class UsersController {
             return new ResponseEntity<>("OK", HttpStatus.CREATED);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            return new ResponseEntity<>("Failed to perform action", HttpStatus.BAD_GATEWAY);
         }
-        return new ResponseEntity<>("Failed to perform action", HttpStatus.BAD_GATEWAY);
     }
 
     @PostMapping("/uploadUsersInformation")
@@ -46,9 +45,8 @@ public class UsersController {
             return new ResponseEntity<>(recordsInserted, HttpStatus.CREATED);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            return new ResponseEntity<>("Failed to perform action", HttpStatus.BAD_GATEWAY);
         }
-        return new ResponseEntity<>("Failed to perform action", HttpStatus.BAD_GATEWAY);
     }
 
     @PostMapping("/uploadConnectionsInformation")
@@ -58,9 +56,8 @@ public class UsersController {
             return new ResponseEntity<>(recordsInserted, HttpStatus.CREATED);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            return new ResponseEntity<>("Failed to perform action", HttpStatus.BAD_GATEWAY);
         }
-        return new ResponseEntity<>("Failed to perform action", HttpStatus.BAD_GATEWAY);
     }
 
 }
