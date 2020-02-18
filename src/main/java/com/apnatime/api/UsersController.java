@@ -1,6 +1,7 @@
 package com.apnatime.api;
 
 import com.apnatime.domain.GenerateRandomDataRequest;
+import com.apnatime.domain.SearchResult;
 import com.apnatime.service.IUserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 public class UsersController {
@@ -28,7 +30,7 @@ public class UsersController {
     }
 
     @PostMapping("/generateRandomData")
-    public ResponseEntity<?> generateRandomData(@RequestBody GenerateRandomDataRequest generateRandomDataRequest) throws IOException {
+    public ResponseEntity<?> generateRandomData(@RequestBody GenerateRandomDataRequest generateRandomDataRequest) {
         try {
             userService.generateRandomData(generateRandomDataRequest.getNumberOfUsers(), generateRandomDataRequest.getMaxNumberOfFriendships());
             return new ResponseEntity<>("OK", HttpStatus.CREATED);
@@ -39,7 +41,7 @@ public class UsersController {
     }
 
     @PostMapping("/uploadUsersInformation")
-    public ResponseEntity<?> uploadUserInfomation(@RequestPart(value = "file") MultipartFile multiPartFile) throws IOException {
+    public ResponseEntity<?> uploadUserInfomation(@RequestPart(value = "file") MultipartFile multiPartFile) {
         try {
             long recordsInserted = userService.addUsersData(multiPartFile);
             return new ResponseEntity<>(recordsInserted, HttpStatus.CREATED);
@@ -50,7 +52,7 @@ public class UsersController {
     }
 
     @PostMapping("/uploadConnectionsInformation")
-    public ResponseEntity<?> uploadConnectionsInfomation(@RequestPart(value = "file") MultipartFile multiPartFile) throws IOException {
+    public ResponseEntity<?> uploadConnectionsInfomation(@RequestPart(value = "file") MultipartFile multiPartFile) {
         try {
             long recordsInserted = userService.addConnectionsData(multiPartFile);
             return new ResponseEntity<>(recordsInserted, HttpStatus.CREATED);
@@ -60,4 +62,14 @@ public class UsersController {
         }
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<?> findUsersAtNLevel(@RequestParam("userId") Integer userId, @RequestParam("level") Integer level) {
+        try {
+            List<SearchResult> results = userService.findUserConnectionsByLevel(userId, level);
+            return new ResponseEntity<>(results, HttpStatus.OK);
+
+        } catch (Exception e) {
+            return new ResponseEntity<>("Failed to perform action", HttpStatus.BAD_GATEWAY);
+        }
+    }
 }

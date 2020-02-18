@@ -2,6 +2,7 @@ package com.apnatime.service;
 
 import com.apnatime.domain.Pair;
 import com.apnatime.domain.SearchResult;
+import com.apnatime.entity.User;
 import org.postgresql.copy.CopyManager;
 import org.postgresql.ds.PGConnectionPoolDataSource;
 import org.postgresql.jdbc.PgConnection;
@@ -13,10 +14,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.time.OffsetDateTime;
+import java.util.*;
 
 @Service
 public class UserServiceImpl implements IUserService {
@@ -133,7 +134,36 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public List<SearchResult> findUserConnectionsByLevel(Integer userId, Integer level) throws Exception {
-        return null;
+        PgConnection pgConnection = null;
+        try{
+            pgConnection = (PgConnection) getDatabaseConnection();
+
+            String sql =  "select u.name,  sg.link, u.creation_date, sg.cnt, sg.dep from (" +
+                    "select link, count(*) as cnt, min(depth) as dep from " +
+                    "search(" + + userId + "," + level + ") " +
+                    "group by link having min(depth) = " + level + ") as sg,  users u where sg.link = u.user_id order by sg.cnt desc";
+
+            ResultSet rs = pgConnection.execSQLQuery(sql);
+            List<SearchResult> results = new LinkedList<>();
+            while(rs.next()){
+                SearchResult searchResult = new SearchResult();
+                User user = new User();
+                user.setName(rs.getString("name"));
+                user.setUserId(rs.getInt("link"));
+                searchResult.setUser(user);
+                searchResult.setNumberOfMutualConnections(rs.getInt("cnt"));
+                searchResult.setLevel(rs.getInt("dep"));
+                results.add(searchResult);
+            }
+            return results;
+
+        }catch (Exception e){
+            logger.error("Exception while finding n degree connections for node {} and level {}", userId, level, e);
+            throw e;
+        }
+        finally {
+            pgConnection.close();
+        }
     }
 
     private File convertMultiPartToFile(MultipartFile file) throws IOException {
