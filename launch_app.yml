@@ -1,0 +1,25 @@
+version: "2.1"
+
+services:
+  postgres:
+    image: postgres:9.6.17
+    environment:
+      - "POSTGRES_USER=apnatime"
+      - "POSTGRES_PASSWORD=apnatime"
+      - "POSTGRES_DB=apnatime"
+    ports:
+      - "5432:5432"
+    container_name: postgres
+    hostname: postgres
+
+  pgadmin:
+    image: dpage/pgadmin4
+    links:
+      - postgres
+    depends_on:
+      - postgres
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: pwdpwd
+    ports:
+      - "5050:80"
