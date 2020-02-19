@@ -35,3 +35,4 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/apnatime
       SPRING_DATASOURCE_USERNAME: apnatime
       SPRING_DATASOURCE_PASSWORD: apnatime
+      SPRING_PROFILES_ACTIVE: test
