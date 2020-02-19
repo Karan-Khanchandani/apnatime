@@ -1,4 +1,4 @@
 ## Spring DATASOURCE (DataSourceAutoConfiguration & DataSourceProperties)
-databaseServer: postgresql://postgres:5432/apnatime
+databaseServer: postgresql://localhost:5432/apnatime
 databaseUsername: apnatime
 databasePassword: apnatime
