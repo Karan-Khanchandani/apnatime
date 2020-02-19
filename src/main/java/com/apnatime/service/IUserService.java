@@ -14,4 +14,6 @@ public interface IUserService {
     long addConnectionsData(MultipartFile multiPartFile) throws  Exception;
 
     List<SearchResult> findUserConnectionsByLevel(Integer userId, Integer level) throws Exception;
+
+    void clearDatabase() throws Exception;
 }

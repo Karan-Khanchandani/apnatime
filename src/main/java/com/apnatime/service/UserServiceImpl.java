@@ -169,6 +169,25 @@ public class UserServiceImpl implements IUserService {
         }
     }
 
+    @Override
+    public void clearDatabase() throws Exception {
+        PgConnection pgConnection = null;
+        try {
+            pgConnection = (PgConnection) getDatabaseConnection();
+            pgConnection.setAutoCommit(false);
+            String sql = "truncate table users cascade";
+            pgConnection.execSQLUpdate(sql);
+            pgConnection.commit();
+
+        } catch (Exception e) {
+            logger.error("Exception occurred while clearing database", e);
+            pgConnection.rollback();
+            throw e;
+        } finally {
+            pgConnection.close();
+        }
+    }
+
     private File convertMultiPartToFile(MultipartFile file) throws IOException {
         File convFile = new File(file.getOriginalFilename());
         FileOutputStream fos = new FileOutputStream(convFile);
