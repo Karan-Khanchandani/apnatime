@@ -99,10 +99,12 @@ public class UserServiceImpl implements IUserService {
         PgConnection pgConnection = null;
         try {
             File file = convertMultiPartToFile(multiPartFile);
+            String absolutePath = file.getAbsolutePath();
             Reader reader = new FileReader(file);
             pgConnection = (PgConnection) getDatabaseConnection();
             CopyManager copyManager = pgConnection.getCopyAPI();
             long recordsInserted = copyManager.copyIn("COPY users(user_id, name) FROM STDIN WITH DELIMITER AS ',' CSV HEADER", reader);
+            file.delete();
             return recordsInserted;
 
         } catch (Exception e) {
@@ -122,6 +124,7 @@ public class UserServiceImpl implements IUserService {
             pgConnection = (PgConnection) getDatabaseConnection();
             CopyManager copyManager = pgConnection.getCopyAPI();
             long recordsInserted = copyManager.copyIn("COPY user_friends_mapping(user_id, friend_id) FROM STDIN WITH DELIMITER AS ',' CSV HEADER", reader);
+            file.delete();
             return recordsInserted;
 
         } catch (Exception e) {
