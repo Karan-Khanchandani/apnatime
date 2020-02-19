@@ -7,7 +7,8 @@ import com.apnatime.domain.UploadDataResponse;
 import com.apnatime.service.IUserService;
 import org.junit.Before;
 import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,38 +17,35 @@ import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.Profile;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import org.testcontainers.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ContextConfiguration(initializers = {IntegrationTests.Initializer.class})
+@ContextConfiguration(initializers = {ApplicationTest.Initializer.class})
 @ActiveProfiles("test")
-public class IntegrationTests {
+@Testcontainers
+public class ApplicationTest {
 
-    @ClassRule
+    @Container
     public static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres")
             .withDatabaseName("apnatime")
             .withUsername("apnatime")
@@ -62,10 +60,10 @@ public class IntegrationTests {
     @Autowired
     TestRestTemplate restTemplate;
 
-    @Before
-    public void initialize() throws Exception {
-        userService.clearDatabase();
-    }
+//    @Before
+//    public void initialize() throws Exception {
+//        userService.clearDatabase();
+//    }
 
     @Test
     public void generateRandomDataTest() throws Exception {
